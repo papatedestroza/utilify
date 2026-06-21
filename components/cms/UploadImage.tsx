@@ -10,6 +10,25 @@ interface Props {
   businessId: string;
 }
 
+const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+function storagePathFromUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    // /storage/v1/object/public/menu-images/<path>
+    const match = u.pathname.match(/\/storage\/v1\/object\/public\/menu-images\/(.+)/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function UploadImage({ value, onChange, businessId }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -18,6 +37,11 @@ export default function UploadImage({ value, onChange, businessId }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!ALLOWED_MIME.includes(file.type)) {
+      toast.error("Solo se permiten imágenes JPG, PNG, WebP o GIF.");
+      return;
+    }
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error("La imagen no puede superar 5 MB.");
       return;
@@ -25,7 +49,7 @@ export default function UploadImage({ value, onChange, businessId }: Props) {
 
     setUploading(true);
     const supabase = createClient();
-    const ext = file.name.split(".").pop();
+    const ext = MIME_TO_EXT[file.type] ?? "jpg";
     const path = `${businessId}/${Date.now()}.${ext}`;
 
     const { error } = await supabase.storage
@@ -42,9 +66,18 @@ export default function UploadImage({ value, onChange, businessId }: Props) {
     onChange(data.publicUrl);
     toast.success("Imagen subida");
     setUploading(false);
+
+    // reset input para permitir re-subir el mismo archivo
+    e.target.value = "";
   }
 
   async function handleRemove() {
+    if (!value) return;
+    const path = storagePathFromUrl(value);
+    if (path) {
+      const supabase = createClient();
+      await supabase.storage.from("menu-images").remove([path]);
+    }
     onChange("");
   }
 
@@ -52,6 +85,7 @@ export default function UploadImage({ value, onChange, businessId }: Props) {
     <div>
       {value ? (
         <div style={{ position: "relative", display: "inline-block" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={value}
             alt="Foto del ítem"
@@ -130,7 +164,7 @@ export default function UploadImage({ value, onChange, businessId }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         style={{ display: "none" }}
         onChange={handleFile}
       />

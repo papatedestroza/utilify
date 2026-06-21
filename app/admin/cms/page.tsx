@@ -72,7 +72,8 @@ export default async function CMSPage() {
         </Link>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20, alignItems: "start" }}>
+      <div className="cms-grid" style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20, alignItems: "start" }}>
+        <style>{`@media (max-width: 900px) { .cms-grid { grid-template-columns: 1fr !important; } }`}</style>
         {/* Left: Category list */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {!categories || categories.length === 0 ? (

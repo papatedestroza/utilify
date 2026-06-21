@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase-client";
 import { toast } from "sonner";
 import type { MenuCategoryWithItems } from "@/lib/types";
@@ -79,9 +80,27 @@ export default function MenuPreview({ businessId, businessSlug, initialCategorie
           justifyContent: "space-between",
         }}
       >
-        <span style={{ fontSize: 14, fontWeight: 550, color: "var(--ink)" }}>
-          Vista previa
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 14, fontWeight: 550, color: "var(--ink)" }}>
+            Vista previa
+          </span>
+          <Link
+            href={`/menu/${businessSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: 11,
+              color: "var(--graphite)",
+              textDecoration: "none",
+              padding: "2px 7px",
+              borderRadius: 6,
+              border: "1px solid var(--dove)",
+              background: "var(--fog)",
+            }}
+          >
+            ↗ Ver menú
+          </Link>
+        </div>
         <button
           onClick={handlePreview}
           disabled={loading}

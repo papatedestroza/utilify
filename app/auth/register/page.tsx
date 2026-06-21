@@ -31,7 +31,22 @@ export default function RegisterPage() {
     }
 
     if (authData.user) {
-      const slug = slugify(form.businessName) || `negocio-${Date.now()}`;
+      const baseSlug = slugify(form.businessName) || `negocio-${Date.now()}`;
+
+      // Garantizar slug único con sufijo numérico si hay colisión
+      let slug = baseSlug;
+      let attempt = 0;
+      while (true) {
+        const { data: existing } = await supabase
+          .from("businesses")
+          .select("id")
+          .eq("slug", slug)
+          .maybeSingle();
+        if (!existing) break;
+        attempt++;
+        slug = `${baseSlug}-${attempt}`;
+      }
+
       const { error: bizError } = await supabase.from("businesses").insert({
         user_id: authData.user.id,
         name: form.businessName,
@@ -125,6 +140,7 @@ export default function RegisterPage() {
               id="businessName"
               type="text"
               required
+              autoComplete="organization"
               value={form.businessName}
               onChange={(e) => setForm({ ...form, businessName: e.target.value })}
               placeholder="Bar La Esquina"
@@ -140,6 +156,7 @@ export default function RegisterPage() {
               id="email"
               type="email"
               required
+              autoComplete="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="vos@tunegocio.com"
@@ -156,6 +173,7 @@ export default function RegisterPage() {
               type="password"
               required
               minLength={6}
+              autoComplete="new-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="Mínimo 6 caracteres"

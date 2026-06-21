@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-client";
@@ -15,6 +16,7 @@ const modules = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -23,19 +25,13 @@ export default function AdminSidebar() {
     router.refresh();
   }
 
-  return (
-    <aside
-      style={{
-        width: 220,
-        background: "var(--white)",
-        borderRight: "1px solid var(--dove)",
-        padding: "24px 0",
-        display: "flex",
-        flexDirection: "column",
-        flexShrink: 0,
-        minHeight: "calc(100vh - 52px)",
-      }}
-    >
+  const isActive = (href: string) =>
+    href !== "/admin"
+      ? pathname.startsWith(href)
+      : pathname === href;
+
+  const navContent = (
+    <>
       <div
         style={{
           padding: "0 16px 8px",
@@ -54,6 +50,7 @@ export default function AdminSidebar() {
           <Link
             key={m.label}
             href={m.href}
+            onClick={() => setOpen(false)}
             style={{
               padding: "10px 16px",
               display: "flex",
@@ -61,10 +58,7 @@ export default function AdminSidebar() {
               gap: 11,
               margin: "2px 8px",
               borderRadius: 10,
-              background:
-                pathname === m.href || (m.href !== "/admin" && pathname.startsWith(m.href))
-                  ? "var(--fog)"
-                  : "transparent",
+              background: isActive(m.href) ? "var(--fog)" : "transparent",
               textDecoration: "none",
             }}
           >
@@ -73,28 +67,16 @@ export default function AdminSidebar() {
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                background:
-                  pathname === m.href || (m.href !== "/admin" && pathname.startsWith(m.href))
-                    ? "var(--ink)"
-                    : "var(--dove)",
-                border:
-                  pathname === m.href || (m.href !== "/admin" && pathname.startsWith(m.href))
-                    ? "none"
-                    : "1.5px solid var(--dove)",
+                background: isActive(m.href) ? "var(--ink)" : "var(--dove)",
+                border: isActive(m.href) ? "none" : "1.5px solid var(--dove)",
                 flexShrink: 0,
               }}
             />
             <span
               style={{
                 fontSize: 14,
-                fontWeight:
-                  pathname === m.href || (m.href !== "/admin" && pathname.startsWith(m.href))
-                    ? 500
-                    : 400,
-                color:
-                  pathname === m.href || (m.href !== "/admin" && pathname.startsWith(m.href))
-                    ? "var(--ink)"
-                    : "var(--ash)",
+                fontWeight: isActive(m.href) ? 500 : 400,
+                color: isActive(m.href) ? "var(--ink)" : "var(--ash)",
               }}
             >
               {m.label}
@@ -180,6 +162,88 @@ export default function AdminSidebar() {
           <span style={{ fontSize: 13, color: "var(--graphite)" }}>Cerrar sesión</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Hamburger button — solo visible en móvil */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Abrir menú"
+        className="admin-hamburger"
+        style={{
+          display: "none",
+          position: "fixed",
+          bottom: 20,
+          right: 20,
+          zIndex: 200,
+          width: 48,
+          height: 48,
+          borderRadius: "50%",
+          background: "var(--ink)",
+          color: "var(--white)",
+          border: "none",
+          cursor: "pointer",
+          fontSize: 20,
+          boxShadow: "0 4px 16px rgba(0,0,0,.18)",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {open ? "✕" : "≡"}
+      </button>
+
+      {/* Overlay móvil */}
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          className="admin-overlay"
+          style={{
+            display: "none",
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,.3)",
+            zIndex: 149,
+          }}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`admin-sidebar${open ? " admin-sidebar--open" : ""}`}
+        style={{
+          width: 220,
+          background: "var(--white)",
+          borderRight: "1px solid var(--dove)",
+          padding: "24px 0",
+          display: "flex",
+          flexDirection: "column",
+          flexShrink: 0,
+          minHeight: "calc(100vh - 52px)",
+        }}
+      >
+        {navContent}
+      </aside>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .admin-hamburger { display: flex !important; }
+          .admin-overlay { display: block !important; }
+          .admin-sidebar {
+            position: fixed !important;
+            left: -240px !important;
+            top: 52px !important;
+            height: calc(100vh - 52px) !important;
+            z-index: 150 !important;
+            transition: left .22s ease !important;
+            box-shadow: 4px 0 24px rgba(0,0,0,.08) !important;
+          }
+          .admin-sidebar--open {
+            left: 0 !important;
+          }
+        }
+      `}</style>
+    </>
   );
 }

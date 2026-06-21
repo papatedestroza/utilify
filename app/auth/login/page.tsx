@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,10 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/admin");
+    const redirect = searchParams.get("redirect");
+    // solo aceptar rutas internas para evitar open redirect
+    const dest = redirect?.startsWith("/") ? redirect : "/admin";
+    router.push(dest);
     router.refresh();
   }
 
@@ -91,6 +95,7 @@ export default function LoginPage() {
               id="email"
               type="email"
               required
+              autoComplete="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="vos@tunegocio.com"
@@ -106,6 +111,7 @@ export default function LoginPage() {
               id="password"
               type="password"
               required
+              autoComplete="current-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
@@ -155,6 +161,14 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
 

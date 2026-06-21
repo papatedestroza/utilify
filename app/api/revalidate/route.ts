@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Business not found or unauthorized" }, { status: 403 });
     }
 
-    revalidateTag(`menu-${businessSlug}`, {});
+    revalidateTag(`menu-${businessSlug}`);
 
     const adminSupabase = createAdminClient();
     await adminSupabase.from("menu_publications").insert({
