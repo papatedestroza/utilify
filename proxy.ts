@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if ((pathname === "/auth/login" || pathname === "/auth/register") && user) {
+  if ((pathname === "/auth/login" || pathname === "/auth/register" || pathname === "/auth/reset-password") && user) {
     const adminUrl = request.nextUrl.clone();
     adminUrl.pathname = "/admin";
     return NextResponse.redirect(adminUrl);
@@ -48,5 +48,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/auth/login", "/auth/register"],
+  matcher: ["/admin/:path*", "/auth/login", "/auth/register", "/auth/reset-password"],
 };

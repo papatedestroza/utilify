@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { SessionGuard } from "@/components/common/SessionGuard";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -55,6 +56,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#17191c" />
       </head>
       <body>
+        <SessionGuard />
         {children}
         <Toaster position="bottom-right" richColors />
       </body>
