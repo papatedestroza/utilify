@@ -1,5 +1,7 @@
 export type Plan = "starter" | "pro" | "completo";
 
+export type ContentStatus = "draft" | "pending" | "published";
+
 export interface Business {
   id: string;
   user_id: string;
@@ -36,6 +38,11 @@ export interface MenuItem {
   is_available: boolean;
   tags: ItemTag[];
   display_order: number;
+  // Workflow de aprobación (RF3.x)
+  status: ContentStatus;
+  // Configuración de interacciones (RF2.3)
+  allow_image_zoom: boolean;
+  pdf_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,7 +60,6 @@ export interface MenuCategoryWithItems extends MenuCategory {
   menu_items: MenuItem[];
 }
 
-// Supabase Database type shape — Relationships requerido por GenericTable constraint
 export type Database = {
   public: {
     Tables: {

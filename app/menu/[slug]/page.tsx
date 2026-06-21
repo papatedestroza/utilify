@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Image from "next/image";
 import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase-server";
-import type { MenuCategoryWithItems } from "@/lib/types";
+import MenuItemCard from "@/components/cms/MenuItemCard";
+import type { MenuCategoryWithItems, MenuItem } from "@/lib/types";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -33,7 +33,8 @@ async function getMenuData(slug: string) {
         .select(`
           id, name, description, display_order,
           menu_items (
-            id, name, description, price, image_url, is_available, tags, display_order
+            id, name, description, price, image_url, is_available,
+            tags, display_order, status, allow_image_zoom, pdf_url
           )
         `)
         .eq("business_id", business.id)
@@ -66,6 +67,7 @@ export default async function MenuPage({ params }: Props) {
 
   const { business, categories } = data;
 
+  // RF5.1 — Solo ítems publicados y disponibles son visibles al público
   const menu: MenuCategoryWithItems[] = categories.map((cat) => ({
     ...cat,
     slug: "",
@@ -74,7 +76,7 @@ export default async function MenuPage({ params }: Props) {
     created_at: "",
     updated_at: "",
     menu_items: (cat.menu_items ?? [])
-      .filter((i) => i.is_available)
+      .filter((i) => i.is_available && i.status === "published")
       .sort((a, b) => a.display_order - b.display_order)
       .map((i) => ({
         ...i,
@@ -82,7 +84,7 @@ export default async function MenuPage({ params }: Props) {
         business_id: business.id,
         created_at: "",
         updated_at: "",
-      })),
+      })) as MenuItem[],
   }));
 
   const visibleCats = menu.filter((c) => c.menu_items.length > 0);
@@ -202,106 +204,10 @@ export default async function MenuPage({ params }: Props) {
                 </p>
               )}
 
+              {/* RF5.2 — MenuItemCard ejecuta las interacciones configuradas */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {cat.menu_items.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: "var(--white)",
-                      borderRadius: 14,
-                      padding: "14px 16px",
-                      boxShadow: "var(--shadow)",
-                      display: "flex",
-                      gap: 14,
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    {item.image_url && (
-                      <Image
-                        src={item.image_url}
-                        alt={item.name}
-                        width={72}
-                        height={72}
-                        style={{
-                          borderRadius: 10,
-                          objectFit: "cover",
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "baseline",
-                          gap: 8,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 15,
-                            fontWeight: 500,
-                            color: "var(--ink)",
-                          }}
-                        >
-                          {item.name}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 15,
-                            fontWeight: 600,
-                            color: "var(--ink)",
-                            flexShrink: 0,
-                          }}
-                        >
-                          ${Number(item.price).toLocaleString("es-AR")}
-                        </span>
-                      </div>
-
-                      {item.description && (
-                        <p
-                          style={{
-                            fontSize: 13,
-                            color: "var(--graphite)",
-                            marginTop: 4,
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {item.description}
-                        </p>
-                      )}
-
-                      {item.tags && item.tags.length > 0 && (
-                        <div
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 6,
-                            marginTop: 8,
-                          }}
-                        >
-                          {item.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 500,
-                                padding: "2px 8px",
-                                borderRadius: 9999,
-                                background: "var(--fog)",
-                                color: "var(--ash)",
-                                border: "1px solid var(--dove)",
-                              }}
-                            >
-                              {TAG_LABELS[tag] ?? tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <MenuItemCard key={item.id} item={item} />
                 ))}
               </div>
             </section>
@@ -330,10 +236,3 @@ export default async function MenuPage({ params }: Props) {
     </div>
   );
 }
-
-const TAG_LABELS: Record<string, string> = {
-  spicy: "🌶 Picante",
-  "sin-gluten": "🌾 Sin TACC",
-  vegano: "🌿 Vegano",
-  "sin-huevo": "Sin huevo",
-};

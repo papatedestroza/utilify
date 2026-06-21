@@ -11,22 +11,68 @@ interface Props {
 }
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MIME_TO_EXT: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
+
+// RF4.3 — Límite de 5 MB por imagen (antes de comprimir)
+const MAX_BYTES_BEFORE_COMPRESS = 5 * 1024 * 1024;
+
+// RF4.2 — Comprimir a WebP ≤1200px, calidad 0.82
+const MAX_DIMENSION = 1200;
+const WEBP_QUALITY = 0.82;
 
 function storagePathFromUrl(url: string): string | null {
   try {
     const u = new URL(url);
-    // /storage/v1/object/public/menu-images/<path>
     const match = u.pathname.match(/\/storage\/v1\/object\/public\/menu-images\/(.+)/);
     return match ? match[1] : null;
   } catch {
     return null;
   }
+}
+
+async function compressToWebP(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let { width, height } = img;
+
+      // RF4.2 — Generar resolución estandarizada sin superar MAX_DIMENSION
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width >= height) {
+          height = Math.round((height / width) * MAX_DIMENSION);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width / height) * MAX_DIMENSION);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas no disponible"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Compresión fallida"))),
+        "image/webp",
+        WEBP_QUALITY
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Imagen inválida"));
+    };
+
+    img.src = objectUrl;
+  });
 }
 
 export default function UploadImage({ value, onChange, businessId }: Props) {
@@ -42,19 +88,28 @@ export default function UploadImage({ value, onChange, businessId }: Props) {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_BYTES_BEFORE_COMPRESS) {
       toast.error("La imagen no puede superar 5 MB.");
       return;
     }
 
     setUploading(true);
+
+    let blob: Blob;
+    try {
+      blob = await compressToWebP(file);
+    } catch {
+      toast.error("No se pudo comprimir la imagen.");
+      setUploading(false);
+      return;
+    }
+
     const supabase = createClient();
-    const ext = MIME_TO_EXT[file.type] ?? "jpg";
-    const path = `${businessId}/${Date.now()}.${ext}`;
+    const path = `${businessId}/${Date.now()}.webp`;
 
     const { error } = await supabase.storage
       .from("menu-images")
-      .upload(path, file, { upsert: true });
+      .upload(path, blob, { upsert: true, contentType: "image/webp" });
 
     if (error) {
       toast.error("Error al subir la imagen.");
@@ -66,8 +121,6 @@ export default function UploadImage({ value, onChange, businessId }: Props) {
     onChange(data.publicUrl);
     toast.success("Imagen subida");
     setUploading(false);
-
-    // reset input para permitir re-subir el mismo archivo
     e.target.value = "";
   }
 

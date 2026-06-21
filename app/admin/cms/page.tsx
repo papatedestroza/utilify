@@ -2,9 +2,22 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import MenuPreview from "@/components/cms/MenuPreview";
-import type { MenuItem } from "@/lib/types";
+import ApprovalActions from "@/components/cms/ApprovalActions";
+import type { MenuItem, ContentStatus } from "@/lib/types";
 
 export const metadata = { title: "CMS — Menú" };
+
+const STATUS_LABELS: Record<ContentStatus, string> = {
+  draft:     "Borrador",
+  pending:   "En revisión",
+  published: "Publicado",
+};
+
+const STATUS_DOT: Record<ContentStatus, string> = {
+  draft:     "var(--dove)",
+  pending:   "#D97706",
+  published: "var(--delta)",
+};
 
 export default async function CMSPage() {
   const supabase = await createClient();
@@ -25,6 +38,11 @@ export default async function CMSPage() {
     .eq("business_id", business.id)
     .order("display_order", { ascending: true });
 
+  const pendingCount = categories?.reduce((acc, cat) => {
+    const items = (cat.menu_items as MenuItem[]) ?? [];
+    return acc + items.filter((i) => i.status === "pending").length;
+  }, 0) ?? 0;
+
   return (
     <div>
       <div
@@ -38,17 +56,37 @@ export default async function CMSPage() {
         }}
       >
         <div>
-          <h1
-            style={{
-              fontSize: 20,
-              fontWeight: 550,
-              color: "var(--ink)",
-              letterSpacing: "-.012em",
-              marginBottom: 2,
-            }}
-          >
-            CMS / Web
-          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
+            <h1
+              style={{
+                fontSize: 20,
+                fontWeight: 550,
+                color: "var(--ink)",
+                letterSpacing: "-.012em",
+              }}
+            >
+              CMS / Web
+            </h1>
+            {pendingCount > 0 && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: 20,
+                  height: 20,
+                  borderRadius: 9999,
+                  background: "#D97706",
+                  color: "#fff",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "0 6px",
+                }}
+              >
+                {pendingCount}
+              </span>
+            )}
+          </div>
           <p style={{ fontSize: 13, color: "var(--graphite)" }}>
             {business.name} · menú.utilify.com.ar/{business.slug}
           </p>
@@ -74,6 +112,7 @@ export default async function CMSPage() {
 
       <div className="cms-grid" style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20, alignItems: "start" }}>
         <style>{`@media (max-width: 900px) { .cms-grid { grid-template-columns: 1fr !important; } }`}</style>
+
         {/* Left: Category list */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {!categories || categories.length === 0 ? (
@@ -86,13 +125,7 @@ export default async function CMSPage() {
                 boxShadow: "var(--shadow)",
               }}
             >
-              <p
-                style={{
-                  fontSize: 16,
-                  color: "var(--graphite)",
-                  marginBottom: 16,
-                }}
-              >
+              <p style={{ fontSize: 16, color: "var(--graphite)", marginBottom: 16 }}>
                 Todavía no tenés categorías.
               </p>
               <Link
@@ -131,14 +164,7 @@ export default async function CMSPage() {
                   }}
                 >
                   <div>
-                    <div
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 500,
-                        color: "var(--ink)",
-                        marginBottom: 2,
-                      }}
-                    >
+                    <div style={{ fontSize: 16, fontWeight: 500, color: "var(--ink)", marginBottom: 2 }}>
                       {cat.name}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--graphite)" }}>
@@ -188,8 +214,9 @@ export default async function CMSPage() {
                           alignItems: "center",
                           justifyContent: "space-between",
                           padding: "10px 12px",
-                          background: "var(--fog)",
+                          background: item.status === "pending" ? "#FFFBEB" : "var(--fog)",
                           borderRadius: 10,
+                          border: item.status === "pending" ? "1px solid #FDE68A" : "1px solid transparent",
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -221,12 +248,29 @@ export default async function CMSPage() {
                             <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>
                               {item.name}
                             </div>
-                            <div style={{ fontSize: 11, color: "var(--graphite)" }}>
+                            <div style={{ fontSize: 11, color: "var(--graphite)", display: "flex", alignItems: "center", gap: 6 }}>
                               ${Number(item.price).toLocaleString("es-AR")}
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                <span
+                                  style={{
+                                    width: 5,
+                                    height: 5,
+                                    borderRadius: "50%",
+                                    background: STATUS_DOT[item.status ?? "draft"],
+                                    display: "inline-block",
+                                  }}
+                                />
+                                {STATUS_LABELS[item.status ?? "draft"]}
+                              </span>
                             </div>
                           </div>
                         </div>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                          {/* Acciones inline de aprobación para ítems en revisión */}
+                          {item.status === "pending" && (
+                            <ApprovalActions itemId={item.id} />
+                          )}
                           <div
                             style={{
                               width: 7,

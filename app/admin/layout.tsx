@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import AdminSidebar from "@/components/common/AdminSidebar";
+import { InactivityGuard } from "@/components/common/InactivityGuard";
+import { SessionGuard } from "@/components/common/SessionGuard";
 
 export default async function AdminLayout({
   children,
@@ -98,6 +100,8 @@ export default async function AdminLayout({
           {children}
         </main>
       </div>
+      <InactivityGuard />
+      <SessionGuard />
     </div>
   );
 }
