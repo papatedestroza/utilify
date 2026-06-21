@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
       }
       const ageMs = Date.now() - new Date(user.created_at).getTime();
       if (ageMs > 2 * 60 * 1000) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        // Usuario antiguo sin token → email ya estaba registrado
+        return NextResponse.json({ error: "email_already_registered" }, { status: 409 });
       }
       verifiedUserId = user.id;
     }

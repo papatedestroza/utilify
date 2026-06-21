@@ -31,6 +31,15 @@ export default function RegisterPage() {
     }
 
     if (authData.user) {
+      // Detectar si Supabase devolvió un usuario ya existente en silencio
+      // (behavior anti-enumeración: devuelve 200 sin error aunque el email ya exista)
+      const ageMs = Date.now() - new Date(authData.user.created_at).getTime();
+      if (!authData.session && ageMs > 10_000) {
+        setError("Este email ya tiene una cuenta. Ingresá en su lugar.");
+        setLoading(false);
+        return;
+      }
+
       // Crear negocio server-side con service role para evitar RLS cuando
       // la sesión no está activa todavía (email confirmation pendiente)
       const res = await fetch("/api/auth/complete-signup", {
@@ -49,7 +58,11 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as { error?: string };
-        setError("Error al crear el negocio: " + (data.error ?? "intentá de nuevo"));
+        if (res.status === 409 || data.error === "email_already_registered") {
+          setError("Este email ya tiene una cuenta. Ingresá en su lugar.");
+        } else {
+          setError("No pudimos crear tu cuenta. Intentá de nuevo.");
+        }
         setLoading(false);
         return;
       }
