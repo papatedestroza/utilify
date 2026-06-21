@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-client";
-import { slugify } from "@/lib/utils";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,31 +30,20 @@ export default function RegisterPage() {
     }
 
     if (authData.user) {
-      const baseSlug = slugify(form.businessName) || `negocio-${Date.now()}`;
-
-      // Garantizar slug único con sufijo numérico si hay colisión
-      let slug = baseSlug;
-      let attempt = 0;
-      while (true) {
-        const { data: existing } = await supabase
-          .from("businesses")
-          .select("id")
-          .eq("slug", slug)
-          .maybeSingle();
-        if (!existing) break;
-        attempt++;
-        slug = `${baseSlug}-${attempt}`;
-      }
-
-      const { error: bizError } = await supabase.from("businesses").insert({
-        user_id: authData.user.id,
-        name: form.businessName,
-        slug,
-        plan: "starter",
+      // Crear negocio server-side con service role para evitar RLS cuando
+      // la sesión no está activa todavía (email confirmation pendiente)
+      const res = await fetch("/api/auth/complete-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: authData.user.id,
+          businessName: form.businessName,
+        }),
       });
 
-      if (bizError) {
-        setError("Error al crear el negocio: " + bizError.message);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setError("Error al crear el negocio: " + (data.error ?? "intentá de nuevo"));
         setLoading(false);
         return;
       }
