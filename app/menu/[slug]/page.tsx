@@ -59,7 +59,14 @@ export default async function MenuPage({ params }: Props) {
     updated_at: "",
     menu_items: (cat.menu_items ?? [])
       .filter((i) => i.is_available)
-      .sort((a, b) => a.display_order - b.display_order),
+      .sort((a, b) => a.display_order - b.display_order)
+      .map((i) => ({
+        ...i,
+        category_id: cat.id,
+        business_id: business.id,
+        created_at: "",
+        updated_at: "",
+      })),
   }));
 
   const visibleCats = menu.filter((c) => c.menu_items.length > 0);
