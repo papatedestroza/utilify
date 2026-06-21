@@ -38,8 +38,11 @@ export async function GET(
         price,
         image_url,
         is_available,
+        status,
         tags,
-        display_order
+        display_order,
+        allow_image_zoom,
+        pdf_url
       )
     `)
     .eq("business_id", business.id)
@@ -53,7 +56,7 @@ export async function GET(
   const menu = (categories ?? []).map((cat) => ({
     ...cat,
     menu_items: (cat.menu_items ?? [])
-      .filter((item) => item.is_available !== false)
+      .filter((item) => item.is_available !== false && item.status === "published")
       .sort((a, b) => a.display_order - b.display_order),
   }));
 
