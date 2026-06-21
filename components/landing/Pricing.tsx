@@ -39,7 +39,7 @@ const plans = [
       "Acceso anticipado a nuevos módulos",
       "Soporte por WhatsApp",
     ],
-    cta: { label: "Contactar →", href: "#", primary: false },
+    cta: { label: "Contactar →", href: "mailto:hola@utilify.com.ar", primary: false },
     highlighted: false,
   },
 ];

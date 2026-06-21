@@ -74,7 +74,7 @@ export default async function AdminDashboard() {
             marginBottom: 4,
           }}
         >
-          Bienvenido, {user.email?.split("@")[0]}
+          Bienvenido, {business?.name ?? user.email?.split("@")[0]}
         </h1>
         <p style={{ fontSize: 14, color: "var(--graphite)" }}>
           {business?.name ?? "Tu negocio"} · Plan{" "}

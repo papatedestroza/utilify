@@ -3,9 +3,36 @@
 import { useState } from "react";
 import Link from "next/link";
 
-function EarlyAccessForm({ accent = "var(--ink)", inputBg = "var(--fog)", borderColor = "var(--dove)" }) {
+function EarlyAccessForm({
+  accent = "var(--ink)",
+  inputBg = "var(--fog)",
+  borderColor = "var(--dove)",
+  module = "general",
+}: {
+  accent?: string;
+  inputBg?: string;
+  borderColor?: string;
+  module?: string;
+}) {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    try {
+      await fetch("/api/early-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, module }),
+      });
+    } finally {
+      setDone(true);
+      setLoading(false);
+    }
+  }
 
   return done ? (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
@@ -37,10 +64,7 @@ function EarlyAccessForm({ accent = "var(--ink)", inputBg = "var(--fog)", border
     </div>
   ) : (
     <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (email) setDone(true);
-      }}
+      onSubmit={handleSubmit}
       style={{ display: "flex", flexDirection: "row", gap: 8, alignItems: "center" }}
     >
       <input
@@ -49,6 +73,7 @@ function EarlyAccessForm({ accent = "var(--ink)", inputBg = "var(--fog)", border
         onChange={(e) => setEmail(e.target.value)}
         placeholder="tu@email.com"
         required
+        disabled={loading}
         style={{
           flex: 1,
           minWidth: 0,
@@ -64,21 +89,23 @@ function EarlyAccessForm({ accent = "var(--ink)", inputBg = "var(--fog)", border
       />
       <button
         type="submit"
+        disabled={loading}
         style={{
-          background: accent,
+          background: loading ? "var(--dove)" : accent,
           color: "var(--white)",
           border: "none",
           borderRadius: 9999,
           padding: "9px 18px",
           fontSize: 13,
           fontWeight: 480,
-          cursor: "pointer",
+          cursor: loading ? "not-allowed" : "pointer",
           whiteSpace: "nowrap",
           fontFamily: "inherit",
           flexShrink: 0,
+          transition: "background .15s ease",
         }}
       >
-        Avisame
+        {loading ? "..." : "Avisame"}
       </button>
     </form>
   );
@@ -305,7 +332,7 @@ export default function Modules() {
               exactamente cuánto ganaste, cuánto gastaste y dónde podés mejorar
               — sin planillas ni contadores.
             </p>
-            <EarlyAccessForm />
+            <EarlyAccessForm module="finanzas" />
           </div>
 
           {/* Gestión — próximamente */}
@@ -386,7 +413,7 @@ export default function Modules() {
               en la barra o un cliente que llama para saber si hay lugar — todo
               online, todo en tiempo real.
             </p>
-            <EarlyAccessForm />
+            <EarlyAccessForm module="gestion" />
           </div>
 
           {/* Marketing — próximamente */}
@@ -465,6 +492,7 @@ export default function Modules() {
               del negocio.
             </p>
             <EarlyAccessForm
+              module="marketing"
               inputBg="rgba(255,255,255,.7)"
               borderColor="rgba(26,74,138,.2)"
             />

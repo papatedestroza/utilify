@@ -121,6 +121,8 @@ function LoginForm() {
 
           {error && (
             <p
+              role="alert"
+              aria-live="polite"
               style={{
                 fontSize: 13,
                 color: "var(--rust)",
@@ -166,7 +168,19 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: "100vh",
+            background: "var(--fog)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        />
+      }
+    >
       <LoginForm />
     </Suspense>
   );

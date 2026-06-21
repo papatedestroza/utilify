@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Image from "next/image";
+import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase-server";
 import type { MenuCategoryWithItems } from "@/lib/types";
 
@@ -7,50 +9,64 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export async function generateStaticParams() {
+  const supabase = createAdminClient();
+  const { data: businesses } = await supabase.from("businesses").select("slug");
+  return (businesses ?? []).map((b) => ({ slug: b.slug as string }));
+}
+
+async function getMenuData(slug: string) {
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+
+      const { data: business } = await supabase
+        .from("businesses")
+        .select("id, name, category")
+        .eq("slug", slug)
+        .single();
+
+      if (!business) return null;
+
+      const { data: categories } = await supabase
+        .from("menu_categories")
+        .select(`
+          id, name, description, display_order,
+          menu_items (
+            id, name, description, price, image_url, is_available, tags, display_order
+          )
+        `)
+        .eq("business_id", business.id)
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+
+      return { business, categories: categories ?? [] };
+    },
+    [`menu-data-${slug}`],
+    { tags: [`menu-${slug}`], revalidate: 3600 }
+  )();
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = createAdminClient();
-  const { data: business } = await supabase
-    .from("businesses")
-    .select("name")
-    .eq("slug", slug)
-    .single();
-
-  if (!business) return { title: "Menú no encontrado" };
+  const data = await getMenuData(slug);
+  if (!data) return { title: "Menú no encontrado" };
 
   return {
-    title: `${business.name} — Menú`,
-    description: `Consultá el menú digital de ${business.name}`,
+    title: `${data.business.name} — Menú`,
+    description: `Consultá el menú digital de ${data.business.name}`,
   };
 }
 
-export const revalidate = 60;
-
 export default async function MenuPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = createAdminClient();
+  const data = await getMenuData(slug);
 
-  const { data: business } = await supabase
-    .from("businesses")
-    .select("id, name, category")
-    .eq("slug", slug)
-    .single();
+  if (!data) notFound();
 
-  if (!business) notFound();
+  const { business, categories } = data;
 
-  const { data: categories } = await supabase
-    .from("menu_categories")
-    .select(`
-      id, name, description, display_order,
-      menu_items (
-        id, name, description, price, image_url, is_available, tags, display_order
-      )
-    `)
-    .eq("business_id", business.id)
-    .eq("is_active", true)
-    .order("display_order", { ascending: true });
-
-  const menu: MenuCategoryWithItems[] = (categories ?? []).map((cat) => ({
+  const menu: MenuCategoryWithItems[] = categories.map((cat) => ({
     ...cat,
     slug: "",
     business_id: business.id,
@@ -107,6 +123,7 @@ export default async function MenuPage({ params }: Props) {
       {/* Category nav */}
       {visibleCats.length > 1 && (
         <nav
+          aria-label="Categorías del menú"
           style={{
             background: "var(--white)",
             borderBottom: "1px solid var(--dove)",
@@ -200,13 +217,12 @@ export default async function MenuPage({ params }: Props) {
                     }}
                   >
                     {item.image_url && (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
+                      <Image
                         src={item.image_url}
                         alt={item.name}
+                        width={72}
+                        height={72}
                         style={{
-                          width: 72,
-                          height: 72,
                           borderRadius: 10,
                           objectFit: "cover",
                           flexShrink: 0,
@@ -317,7 +333,7 @@ export default async function MenuPage({ params }: Props) {
 
 const TAG_LABELS: Record<string, string> = {
   spicy: "🌶 Picante",
-  "sin-gluten": "Sin TACC",
-  vegano: "Vegano",
+  "sin-gluten": "🌾 Sin TACC",
+  vegano: "🌿 Vegano",
   "sin-huevo": "Sin huevo",
 };

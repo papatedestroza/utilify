@@ -125,8 +125,9 @@ export default function ItemForm({ businessId, categories, defaultCategoryId, it
 
         {/* Nombre */}
         <div>
-          <label style={labelStyle}>Nombre *</label>
+          <label htmlFor="item-name" style={labelStyle}>Nombre *</label>
           <input
+            id="item-name"
             type="text"
             required
             value={form.name}
@@ -138,8 +139,9 @@ export default function ItemForm({ businessId, categories, defaultCategoryId, it
 
         {/* Precio */}
         <div>
-          <label style={labelStyle}>Precio (ARS) *</label>
+          <label htmlFor="item-price" style={labelStyle}>Precio (ARS) *</label>
           <input
+            id="item-price"
             type="number"
             required
             min={0}
@@ -153,8 +155,9 @@ export default function ItemForm({ businessId, categories, defaultCategoryId, it
 
         {/* Descripción */}
         <div>
-          <label style={labelStyle}>Descripción</label>
+          <label htmlFor="item-desc" style={labelStyle}>Descripción</label>
           <textarea
+            id="item-desc"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Descripción opcional..."
@@ -165,8 +168,9 @@ export default function ItemForm({ businessId, categories, defaultCategoryId, it
 
         {/* Categoría */}
         <div>
-          <label style={labelStyle}>Categoría *</label>
+          <label htmlFor="item-cat" style={labelStyle}>Categoría *</label>
           <select
+            id="item-cat"
             required
             value={form.category_id}
             onChange={(e) => setForm({ ...form, category_id: e.target.value })}

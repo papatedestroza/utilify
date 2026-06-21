@@ -66,7 +66,7 @@ export default function Footer() {
                 {[
                   { label: "Módulos", href: "#modulos" },
                   { label: "Precios", href: "#precios" },
-                  { label: "Novedades", href: "#" },
+                  { label: "Novedades", href: "/auth/register" },
                 ].map((l) => (
                   <a
                     key={l.label}
@@ -100,7 +100,7 @@ export default function Footer() {
                 {[
                   { label: "Nosotros", href: "#" },
                   { label: "Blog", href: "#" },
-                  { label: "Contacto", href: "#" },
+                  { label: "Contacto", href: "mailto:hola@utilify.com.ar" },
                 ].map((l) => (
                   <a
                     key={l.label}

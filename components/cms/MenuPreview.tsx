@@ -16,6 +16,8 @@ export default function MenuPreview({ businessId, businessSlug, initialCategorie
   const [categories, setCategories] = useState(initialCategories);
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [confirmPending, setConfirmPending] = useState(false);
+  const [lastPublished, setLastPublished] = useState<Date | null>(null);
 
   async function handlePreview() {
     setLoading(true);
@@ -44,6 +46,8 @@ export default function MenuPreview({ businessId, businessSlug, initialCategorie
       });
 
       if (res.ok) {
+        setLastPublished(new Date());
+        setConfirmPending(false);
         toast.success("¡Menú publicado correctamente!");
       } else {
         const data = await res.json().catch(() => ({})) as { error?: string };
@@ -53,6 +57,7 @@ export default function MenuPreview({ businessId, businessSlug, initialCategorie
       toast.error("Error de red al publicar.");
     }
     setPublishing(false);
+    setConfirmPending(false);
   }
 
   const availableCategories = categories.filter(
@@ -228,35 +233,83 @@ export default function MenuPreview({ businessId, businessSlug, initialCategorie
           borderTop: "1px solid var(--dove)",
         }}
       >
-        <button
-          onClick={handlePublish}
-          disabled={publishing}
-          style={{
-            width: "100%",
-            background: publishing ? "var(--dove)" : "var(--ink)",
-            color: "var(--white)",
-            border: "none",
-            borderRadius: 9999,
-            padding: "11px 0",
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: publishing ? "not-allowed" : "pointer",
-            fontFamily: "inherit",
-            transition: "background .15s ease",
-          }}
-        >
-          {publishing ? "Publicando..." : "Publicar menú"}
-        </button>
-        <p
-          style={{
-            fontSize: 11,
-            color: "var(--dove)",
-            textAlign: "center",
-            marginTop: 8,
-          }}
-        >
-          Actualiza el menú visible en tu web.
-        </p>
+        {confirmPending ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <p style={{ fontSize: 12, color: "var(--ash)", textAlign: "center", margin: 0 }}>
+              ¿Publicar el menú en vivo?
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => setConfirmPending(false)}
+                disabled={publishing}
+                style={{
+                  flex: 1,
+                  background: "var(--fog)",
+                  color: "var(--ash)",
+                  border: "1px solid var(--dove)",
+                  borderRadius: 9999,
+                  padding: "10px 0",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handlePublish}
+                disabled={publishing}
+                style={{
+                  flex: 1,
+                  background: publishing ? "var(--dove)" : "var(--rust)",
+                  color: "var(--white)",
+                  border: "none",
+                  borderRadius: 9999,
+                  padding: "10px 0",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: publishing ? "not-allowed" : "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {publishing ? "Publicando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={() => setConfirmPending(true)}
+              style={{
+                width: "100%",
+                background: "var(--ink)",
+                color: "var(--white)",
+                border: "none",
+                borderRadius: 9999,
+                padding: "11px 0",
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "background .15s ease",
+              }}
+            >
+              Publicar menú
+            </button>
+            <p
+              style={{
+                fontSize: 11,
+                color: "var(--dove)",
+                textAlign: "center",
+                marginTop: 8,
+              }}
+            >
+              {lastPublished
+                ? `Última publicación: ${lastPublished.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`
+                : "Actualiza el menú visible en tu web."}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

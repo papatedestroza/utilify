@@ -87,8 +87,9 @@ export default function CategoryForm({ businessId, category }: Props) {
     <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
-          <label style={labelStyle}>Nombre *</label>
+          <label htmlFor="cat-name" style={labelStyle}>Nombre *</label>
           <input
+            id="cat-name"
             type="text"
             required
             value={form.name}
@@ -104,8 +105,9 @@ export default function CategoryForm({ businessId, category }: Props) {
         </div>
 
         <div>
-          <label style={labelStyle}>Descripción</label>
+          <label htmlFor="cat-desc" style={labelStyle}>Descripción</label>
           <textarea
+            id="cat-desc"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Descripción opcional..."
@@ -115,8 +117,9 @@ export default function CategoryForm({ businessId, category }: Props) {
         </div>
 
         <div>
-          <label style={labelStyle}>Orden de visualización</label>
+          <label htmlFor="cat-order" style={labelStyle}>Orden de visualización</label>
           <input
+            id="cat-order"
             type="number"
             min={0}
             value={form.display_order}

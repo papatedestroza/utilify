@@ -27,7 +27,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 a { color: inherit; text-decoration: none; }
-.serif { font-family: 'Source Serif 4', Georgia, serif; }
+.serif { font-family: var(--font-serif), Georgia, serif; }
 
 /* Hover transitions */
 .hov-card { transition: box-shadow .22s ease, transform .22s ease; }
@@ -72,4 +72,8 @@ a { color: inherit; text-decoration: none; }
 /* Form elements */
 input[type="text"], input[type="email"], input[type="number"], input[type="password"], textarea, select {
   font-family: inherit;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--ink) !important;
+  outline-offset: 2px;
 }

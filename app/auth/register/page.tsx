@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ email: "", password: "", businessName: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"form" | "confirm-email">("form");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +25,7 @@ export default function RegisterPage() {
     });
 
     if (authError) {
-      setError(authError.message);
+      setError(translateAuthError(authError.message));
       setLoading(false);
       return;
     }
@@ -34,7 +35,12 @@ export default function RegisterPage() {
       // la sesión no está activa todavía (email confirmation pendiente)
       const res = await fetch("/api/auth/complete-signup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authData.session?.access_token
+            ? { Authorization: `Bearer ${authData.session.access_token}` }
+            : {}),
+        },
         body: JSON.stringify({
           userId: authData.user.id,
           businessName: form.businessName,
@@ -48,10 +54,66 @@ export default function RegisterPage() {
         return;
       }
 
+      // Si no hay sesión, el email confirmation está habilitado
+      if (!authData.session) {
+        setStep("confirm-email");
+        setLoading(false);
+        return;
+      }
+
       router.push("/admin");
     }
 
     setLoading(false);
+  }
+
+  if (step === "confirm-email") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "var(--fog)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px 16px",
+        }}
+      >
+        <div
+          style={{
+            background: "var(--white)",
+            borderRadius: 24,
+            padding: "40px 36px",
+            width: "100%",
+            maxWidth: 440,
+            boxShadow: "var(--shadow)",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 40, marginBottom: 16 }}>📬</div>
+          <h1
+            style={{
+              fontSize: 22,
+              fontWeight: 500,
+              color: "var(--ink)",
+              letterSpacing: "-.015em",
+              marginBottom: 12,
+            }}
+          >
+            Revisá tu correo
+          </h1>
+          <p style={{ fontSize: 15, color: "var(--graphite)", lineHeight: 1.6, marginBottom: 24 }}>
+            Te enviamos un link de confirmación a{" "}
+            <strong style={{ color: "var(--ink)" }}>{form.email}</strong>.
+            <br />
+            Hacé clic en el link para activar tu cuenta.
+          </p>
+          <p style={{ fontSize: 13, color: "var(--ash)" }}>
+            ¿No lo recibiste? Revisá la carpeta de spam.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -171,6 +233,8 @@ export default function RegisterPage() {
 
           {error && (
             <p
+              role="alert"
+              aria-live="polite"
               style={{
                 fontSize: 13,
                 color: "var(--rust)",
@@ -223,6 +287,17 @@ export default function RegisterPage() {
       </div>
     </div>
   );
+}
+
+function translateAuthError(msg: string): string {
+  if (msg.includes("already registered") || msg.includes("already been registered")) {
+    return "Este email ya tiene una cuenta. Ingresá en su lugar.";
+  }
+  if (msg.includes("Invalid email")) return "El formato del email no es válido.";
+  if (msg.includes("Password should be at least")) return "La contraseña debe tener al menos 6 caracteres.";
+  if (msg.includes("weak")) return "La contraseña es demasiado débil. Usá letras, números y símbolos.";
+  if (msg.includes("rate limit") || msg.includes("too many")) return "Demasiados intentos. Esperá unos minutos e intentá de nuevo.";
+  return "Ocurrió un error. Intentá de nuevo.";
 }
 
 const labelStyle: React.CSSProperties = {

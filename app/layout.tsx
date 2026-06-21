@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 
@@ -7,6 +7,14 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+});
+
+const sourceSerif4 = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -25,11 +33,13 @@ export const metadata: Metadata = {
     siteName: "Utilify",
     locale: "es_AR",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Utilify" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Utilify — Todo tu negocio, en un solo lugar",
     description: "La plataforma modular para pequeños negocios de Argentina y LATAM.",
+    images: ["/og-image.png"],
   },
   robots: { index: true, follow: true },
 };
@@ -40,14 +50,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={inter.variable}>
+    <html lang="es" className={`${inter.variable} ${sourceSerif4.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap"
-          rel="stylesheet"
-        />
         <meta name="theme-color" content="#17191c" />
       </head>
       <body>
